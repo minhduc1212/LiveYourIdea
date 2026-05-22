@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Collaborative Notepad</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #editor {
+            width: 100%;
+            height: 300px;
+            font-size: 16px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #status { color: gray; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Live Collaborative Notepad</h2>
+    <div id="status">Status: Connecting...</div>
+    
+    <!-- Text Input Area -->
+    <textarea id="editor" placeholder="Type something here..."></textarea>
+
+    <script>
+        // 1. Initialize connection to FastAPI WebSocket
+        // Note: use ws:// instead of http://
+        const socket = new WebSocket("ws://127.0.0.1:8000/ws/notepad");
+        
+        const editor = document.getElementById("editor");
+        const statusDiv = document.getElementById("status");
+
+        // 2. Listen for successful connection
+        socket.onopen = function(event) {
+            statusDiv.textContent = "Status: Connected (Online)";
+            statusDiv.style.color = "green";
+        };
+
+        // 3. Listen for connection loss
+        socket.onclose = function(event) {
+            statusDiv.textContent = "Status: Disconnected (Offline)";
+            statusDiv.style.color = "red";
+        };
+
+        // 4. INPUT EVENT: When you type, send data to the Server
+        editor.addEventListener("input", function() {
+            // Get the current content of the textarea
+            const textContent = editor.value;
+            // Send via WebSocket
+            socket.send(textContent);
+        });
+
+        // 5. RECEIVE DATA: When others type, the Server pushes updates here
+        socket.onmessage = function(event) {
+            // event.data is the text sent by others
+            const newText = event.data;
+            
+            // Get current cursor position to prevent jumping during update
+            const cursorPosition = editor.selectionStart;
+            
+            // Update textarea content
+            editor.value = newText;
+            
+            // Restore cursor to its original position
+            editor.setSelectionRange(cursorPosition, cursorPosition);
+        };
+    </script>
+</body>
+</html>
