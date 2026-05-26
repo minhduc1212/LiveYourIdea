@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import JoinRoom from './components/JoinRoom';
 import Editor from './components/Editor';
-import CustomToolbar from './components/CustomToolbar';
 import { useWebSocket } from './hooks/useWebSocket';
 
 /**
@@ -25,7 +24,6 @@ export default function App() {
   const [userId, setUserId] = useState('');
 
   const editorMessageHandler = useRef(null);
-  const quillRef = useRef(null);
 
   const handleMessage = useCallback((data) => {
     switch (data.type) {
@@ -113,8 +111,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Center: Custom text-based toolbar */}
-        <CustomToolbar quillRef={quillRef} />
+        {/* Center removed since Tldraw has its own UI */}
 
         {/* Right: Status + Exit */}
         <div className="header-section">
@@ -144,11 +141,10 @@ export default function App() {
           {/* Thin divider */}
           <div className="editor-divider" />
 
-          {/* Quill Editor */}
+          {/* Tldraw Editor */}
           <Editor
             send={send}
             onMessage={editorMessageHandler}
-            quillRef={quillRef}
           />
         </div>
       </div>

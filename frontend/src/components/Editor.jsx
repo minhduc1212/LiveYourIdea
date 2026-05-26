@@ -1,78 +1,76 @@
-import { useRef, useEffect, useCallback } from 'react';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import { useEffect, useState } from 'react';
+import { Tldraw, createTLStore, defaultShapeUtils } from 'tldraw';
+import 'tldraw/tldraw.css';
 
-const MODULES = {
-  toolbar: false, // We use our custom toolbar instead
-};
+export default function Editor({ send, onMessage }) {
+  const [store] = useState(() => createTLStore({ shapeUtils: defaultShapeUtils }));
+  const [isReady, setIsReady] = useState(false);
 
-export default function Editor({ send, onMessage, quillRef }) {
-  const isRemoteChange = useRef(false);
-  const contentSyncTimer = useRef(null);
-
-  // Handle incoming messages from WebSocket
+  // Handle incoming messages and store listening
   useEffect(() => {
-    if (!onMessage) return;
+    setIsReady(true);
+    let unlisten = null;
 
     const handler = (data) => {
-      if (!quillRef.current) return;
-      const editor = quillRef.current.getEditor();
-
       if (data.type === 'delta') {
-        isRemoteChange.current = true;
         try {
-          editor.updateContents(data.delta);
+          store.mergeRemoteChanges(() => {
+            const { added, updated, removed } = data.delta;
+            if (added) store.put(Object.values(added));
+            if (updated) store.put(Object.values(updated).map(u => u[1]));
+            if (removed) store.remove(Object.keys(removed));
+          });
         } catch (err) {
           console.error('Failed to apply delta:', err);
         }
-        isRemoteChange.current = false;
       } else if (data.type === 'full_sync' && data.content) {
-        isRemoteChange.current = true;
         try {
-          const delta = editor.clipboard.convert({ html: data.content });
-          editor.setContents(delta);
+          const snapshot = JSON.parse(data.content);
+          store.loadSnapshot(snapshot);
         } catch (err) {
           console.error('Failed to apply full sync:', err);
         }
-        isRemoteChange.current = false;
       }
     };
 
-    onMessage.current = handler;
-  }, [onMessage, quillRef]);
-
-  // Handle local text changes
-  const handleChange = useCallback((content, delta, source, editor) => {
-    if (source !== 'user' || isRemoteChange.current) return;
-
-    send({
-      type: 'delta',
-      delta: delta,
-    });
-
-    if (contentSyncTimer.current) {
-      clearTimeout(contentSyncTimer.current);
+    if (onMessage) {
+      onMessage.current = handler;
     }
-    contentSyncTimer.current = setTimeout(() => {
-      send({
-        type: 'content_update',
-        content: editor.getHTML(),
-      });
-    }, 1000);
-  }, [send]);
+
+    unlisten = store.listen(
+      (update) => {
+        if (update.source !== 'user') return;
+
+        // Broadcast the delta
+        send({
+          type: 'delta',
+          delta: update.changes,
+        });
+
+        // Periodically sync the entire snapshot to the server for new users
+        if (window.snapshotTimer) {
+          clearTimeout(window.snapshotTimer);
+        }
+        window.snapshotTimer = setTimeout(() => {
+          send({
+            type: 'content_update',
+            content: JSON.stringify(store.getSnapshot()),
+          });
+        }, 1000);
+      },
+      { source: 'user', scope: 'document' }
+    );
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [store, send, onMessage]);
+
+  if (!isReady) return <div style={{ padding: 20 }}>Loading canvas...</div>;
 
   return (
-    <ReactQuill
-      ref={quillRef}
-      theme="snow"
-      modules={MODULES}
-      placeholder="Start writing your ideas..."
-      onChange={handleChange}
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    />
+    <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%' }}>
+      <Tldraw store={store} />
+    </div>
   );
 }

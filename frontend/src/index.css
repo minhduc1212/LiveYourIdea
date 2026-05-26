@@ -144,93 +144,30 @@ body {
   opacity: 0.5;
 }
 
-/* ===== Custom Toolbar ===== */
-.custom-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
 
-.toolbar-btn {
-  font-family: var(--font-sans);
-  font-weight: 400;
-  font-size: 0.65rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--dark);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px 0;
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: color 0.2s ease;
-  white-space: nowrap;
-}
-
-.toolbar-btn::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--black);
-  transform: scaleX(0);
-  transition: transform 0.25s ease;
-}
-
-.toolbar-btn:hover::after {
-  transform: scaleX(1);
-}
-
-.toolbar-btn:hover {
-  color: var(--black);
-}
-
-.toolbar-btn.active {
-  color: var(--black);
-  font-weight: 500;
-}
-
-.toolbar-btn.active::after {
-  transform: scaleX(1);
-}
-
-.toolbar-icon {
-  width: 13px;
-  height: 13px;
-  stroke: var(--gray);
-  fill: none;
-  stroke-width: 1.2;
-  flex-shrink: 0;
-}
 
 /* ===== Editor Area ===== */
 .editor-wrapper {
   margin-top: 52px;
-  min-height: calc(100vh - 52px);
+  height: calc(100vh - 52px);
   display: flex;
-  justify-content: center;
-  padding: 0 32px;
+  width: 100%;
 }
 
 .editor-container {
   width: 100%;
-  max-width: 800px;
-  padding: 72px 0 120px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .editor-title {
   font-family: var(--font-serif-display);
   font-weight: 700;
-  font-size: 2.4rem;
+  font-size: 1.4rem;
   letter-spacing: -0.01em;
-  line-height: 1.25;
   color: var(--black);
-  margin-bottom: 16px;
+  padding: 16px 32px 0;
 }
 
 .editor-participants {
@@ -239,109 +176,11 @@ body {
   font-weight: 400;
   color: var(--gray);
   font-style: italic;
-  margin-bottom: 48px;
-  letter-spacing: 0.01em;
-  line-height: 1.5;
+  padding: 0 32px;
+  margin-bottom: 16px;
 }
 
-.editor-divider {
-  width: 40px;
-  height: 1px;
-  background: var(--gray-light);
-  margin-bottom: 48px;
-}
 
-/* ===== Quill Overrides (Editorial) ===== */
-.ql-toolbar.ql-snow {
-  display: none !important;
-}
-
-.ql-container.ql-snow {
-  border: none !important;
-  font-family: var(--font-serif) !important;
-  font-size: 1.1rem !important;
-  color: var(--black) !important;
-}
-
-.ql-editor {
-  padding: 0 !important;
-  line-height: 2 !important;
-  min-height: 400px !important;
-  caret-color: var(--black);
-}
-
-.ql-editor p {
-  margin-bottom: 1em;
-}
-
-.ql-editor h1 {
-  font-family: var(--font-serif-display) !important;
-  font-size: 2rem !important;
-  font-weight: 700 !important;
-  margin-bottom: 0.5em !important;
-}
-
-.ql-editor h2 {
-  font-family: var(--font-serif-display) !important;
-  font-size: 1.5rem !important;
-  font-weight: 700 !important;
-  margin-bottom: 0.5em !important;
-}
-
-.ql-editor blockquote {
-  border-left: 2px solid var(--gray-light) !important;
-  padding-left: 20px !important;
-  color: var(--gray) !important;
-  font-style: italic !important;
-  margin: 1.5em 0 !important;
-}
-
-.ql-editor strong {
-  font-weight: 700;
-}
-
-.ql-editor em {
-  font-style: italic;
-}
-
-.ql-editor u {
-  text-decoration-color: var(--gray-light);
-  text-underline-offset: 3px;
-}
-
-.ql-editor a {
-  color: var(--dark);
-  text-decoration: underline;
-  text-decoration-color: var(--gray-light);
-  text-underline-offset: 2px;
-}
-
-.ql-editor a:hover {
-  text-decoration-color: var(--black);
-}
-
-.ql-editor.ql-blank::before {
-  left: 0 !important;
-  right: 0 !important;
-  color: var(--gray-light) !important;
-  font-family: var(--font-serif) !important;
-  font-style: italic !important;
-  opacity: 1;
-}
-
-.ql-editor img {
-  max-width: 100%;
-  margin: 2em 0;
-}
-
-.ql-editor pre {
-  background: var(--off-white) !important;
-  border: var(--hairline-light) !important;
-  border-radius: 0 !important;
-  padding: 16px 20px !important;
-  font-size: 0.9rem !important;
-  margin: 1.5em 0 !important;
-}
 
 /* ===== Join Room (Login) ===== */
 .join-page {
@@ -518,14 +357,9 @@ body {
     height: 48px;
   }
 
-  .custom-toolbar {
-    gap: 12px;
-    overflow-x: auto;
-  }
 
-  .toolbar-btn {
-    font-size: 0.6rem;
-  }
+
+
 
   .editor-wrapper {
     padding: 0 16px;
@@ -554,8 +388,4 @@ body {
   }
 }
 
-@media (max-width: 480px) {
-  .custom-toolbar {
-    display: none;
-  }
-}
+
