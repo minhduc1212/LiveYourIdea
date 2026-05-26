@@ -1,76 +1,83 @@
-import { useEffect, useState } from 'react';
-import { Tldraw, createTLStore, defaultShapeUtils } from 'tldraw';
-import 'tldraw/tldraw.css';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Excalidraw, getSceneVersion } from '@excalidraw/excalidraw';
+import '@excalidraw/excalidraw/index.css';
 
 export default function Editor({ send, onMessage }) {
-  const [store] = useState(() => createTLStore({ shapeUtils: defaultShapeUtils }));
-  const [isReady, setIsReady] = useState(false);
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
+  const isRemoteChange = useRef(false);
+  const lastVersion = useRef(0);
 
-  // Handle incoming messages and store listening
+  // Handle incoming messages from WebSocket
   useEffect(() => {
-    setIsReady(true);
-    let unlisten = null;
+    if (!excalidrawAPI || !onMessage) return;
 
     const handler = (data) => {
+      let elementsToApply = null;
+      
       if (data.type === 'delta') {
-        try {
-          store.mergeRemoteChanges(() => {
-            const { added, updated, removed } = data.delta;
-            if (added) store.put(Object.values(added));
-            if (updated) store.put(Object.values(updated).map(u => u[1]));
-            if (removed) store.remove(Object.keys(removed));
-          });
-        } catch (err) {
-          console.error('Failed to apply delta:', err);
-        }
+        elementsToApply = data.delta;
       } else if (data.type === 'full_sync' && data.content) {
         try {
-          const snapshot = JSON.parse(data.content);
-          store.loadSnapshot(snapshot);
+          elementsToApply = JSON.parse(data.content);
         } catch (err) {
-          console.error('Failed to apply full sync:', err);
+          console.error('Failed to parse full sync:', err);
         }
+      }
+
+      if (elementsToApply) {
+        isRemoteChange.current = true;
+        try {
+          excalidrawAPI.updateScene({ elements: elementsToApply });
+          lastVersion.current = getSceneVersion(elementsToApply);
+        } catch (err) {
+          console.error('Failed to apply scene updates:', err);
+        }
+        
+        // Excalidraw's onChange might fire slightly after updateScene,
+        // so we hold the flag true for a brief moment.
+        setTimeout(() => {
+          isRemoteChange.current = false;
+        }, 50);
       }
     };
 
-    if (onMessage) {
-      onMessage.current = handler;
-    }
+    onMessage.current = handler;
+  }, [excalidrawAPI, onMessage]);
 
-    unlisten = store.listen(
-      (update) => {
-        if (update.source !== 'user') return;
+  // Handle local drawing changes
+  const handleChange = useCallback((elements) => {
+    if (isRemoteChange.current) return; // Ignore updates caused by incoming data
 
-        // Broadcast the delta
+    const version = getSceneVersion(elements);
+    
+    // Only broadcast if the scene has actually changed
+    if (version > lastVersion.current) {
+      lastVersion.current = version;
+      
+      send({
+        type: 'delta',
+        delta: elements,
+      });
+
+      // Debounce the full snapshot
+      if (window.snapshotTimer) {
+        clearTimeout(window.snapshotTimer);
+      }
+      window.snapshotTimer = setTimeout(() => {
         send({
-          type: 'delta',
-          delta: update.changes,
+          type: 'content_update',
+          content: JSON.stringify(elements),
         });
-
-        // Periodically sync the entire snapshot to the server for new users
-        if (window.snapshotTimer) {
-          clearTimeout(window.snapshotTimer);
-        }
-        window.snapshotTimer = setTimeout(() => {
-          send({
-            type: 'content_update',
-            content: JSON.stringify(store.getSnapshot()),
-          });
-        }, 1000);
-      },
-      { source: 'user', scope: 'document' }
-    );
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, [store, send, onMessage]);
-
-  if (!isReady) return <div style={{ padding: 20 }}>Loading canvas...</div>;
+      }, 1000);
+    }
+  }, [send]);
 
   return (
-    <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%' }}>
-      <Tldraw store={store} />
+    <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%', minHeight: '500px' }}>
+      <Excalidraw 
+        excalidrawAPI={(api) => setExcalidrawAPI(api)} 
+        onChange={handleChange}
+      />
     </div>
   );
 }

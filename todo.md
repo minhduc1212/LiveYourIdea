@@ -17,7 +17,7 @@
 # Tech
  - use webRTC to share the notepad content
  - backend: websocket server to manage the connections and rooms: FastAPI + WebSockets
- - frontend: a big textarea to write, and a list of connected users: React.js + WebSocket client + Tailwind CSS + tldraw 
+ - frontend: a big textarea to write, and a list of connected users: React.js + WebSocket client + Tailwind CSS + Excalidraw
  - deploy on a simple hosting service: Vercel 
 
 # UI

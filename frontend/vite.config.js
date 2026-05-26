@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    'process.env.IS_PREACT': JSON.stringify('true'),
+  },
   server: {
     proxy: {
       '/ws': {
